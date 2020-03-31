@@ -1,12 +1,35 @@
 import java.util.Random;
+import java.util.Scanner;
 
 public class Board {
 
     public static void main(String[] args) {
 
-        Board myBoard = new Board();
-        myBoard.printBoard(true);
-        myBoard.printBoard(false);
+        // Bring in a scanner
+        Scanner scan = new Scanner(System.in);
+
+        // Create the board
+        Board myBoard = new Board(2, 2, 2);
+
+        do {
+            // Print board
+            myBoard.printBoard(true);
+            myBoard.printBoard(false);
+
+            // Receive input and make move
+            System.out.println("r=0/f=1, i, j");
+            int type = scan.nextInt();
+            int i = scan.nextInt();
+            int j = scan.nextInt();
+
+            if (type == 0)
+                myBoard.revealTile(i, j);
+            else if (type == 1)
+                myBoard.flagTile(i, j);
+            else
+                System.out.println("Invalid input.");
+
+        } while (myBoard.isActive);
     }
 
     // Fields
@@ -127,6 +150,10 @@ public class Board {
         if (i < 0 || i >= this.height || j < 0 || j >= this.width)
             throw new RuntimeException("Tile location value not in bounds.");
 
+        // Make sure tile is not revealed
+        if (this.tileArray[i][j].isRevealed)
+            throw new RuntimeException("Tile is revealed.");
+
         // Toggle flag status
         this.tileArray[i][j].isFlagged = !this.tileArray[i][j].isFlagged;
     }
@@ -170,6 +197,8 @@ public class Board {
 
                     if (this.tileArray[i][j].isRevealed)
                         System.out.print(" " + this.tileArray[i][j].numNeighbors + " ");
+                    else if (this.tileArray[i][j].isFlagged)
+                        System.out.print(" F ");
                     else
                         System.out.print(" . ");
                 }
