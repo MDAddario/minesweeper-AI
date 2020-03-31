@@ -17,8 +17,12 @@ public class Board {
         this.constructTiles();
     }
 
-    // Complicated constructor
-    private Board(int height, int width, int totalBombs) {
+    // Complicated constructor without default values
+    public Board(int height, int width, int totalBombs) {
+
+        // Check for nonsense
+        if (totalBombs >= height * width)
+            throw new RuntimeException("There must be more tiles than there are bombs");
         this.height = height;
         this.width = width;
         this.totalBombs = totalBombs;
@@ -59,6 +63,33 @@ public class Board {
                 this.tileArray[i][j].countNeighbors();
     }
 
+    public void printBoard(boolean revealAll) {
+
+        for (int i = 0; i < this.height; i++) {
+
+            System.out.print("|");
+
+            for (int j = 0; j < this.width; j++) {
+
+                if (revealAll) {
+
+                    if (this.tileArray[i][j].isBomb)
+                        System.out.print(" B ");
+                    else
+                        System.out.print(" " + this.tileArray[i][j].numNeighbors + " ");
+
+                } else {
+
+                    if (this.tileArray[i][j].isRevealed)
+                        System.out.print(" " + this.tileArray[i][j].numNeighbors + " ");
+                    else
+                        System.out.print(" . ");
+                }
+            }
+            System.out.println("|");
+        }
+    }
+
     private class Tile {
 
         // Fields
@@ -69,12 +100,35 @@ public class Board {
         private boolean isRevealed;
 
         // Constructor
-        public Tile(boolean isBomb, int i, int j) {
+        private Tile(boolean isBomb, int i, int j) {
             this.i = i;
             this.j = j;
             this.isBomb = isBomb;
-            this.numNeighbors = -1;
+            this.numNeighbors = 0;
             this.isRevealed = false;
+        }
+
+        // Determine the number of bomb neighbors
+        private void countNeighbors() {
+
+            // Don't bother counting if the tile is a bomb
+            if (this.isBomb)
+                return;
+
+            // Count all tiles within a 2 manhattan distance
+            for (int di = -1; di <= 1; di++)
+                for (int dj = -1; dj <= 1; dj++){
+
+                    // Ensure indices in bounds
+                    int iNew = this.i + di;
+                    int jNew = this.j + dj;
+
+                    if (iNew < 0 || iNew >= Board.this.height || jNew < 0 || jNew >= Board.this.width)
+                        continue;
+
+                    if (Board.this.tileArray[iNew][jNew].isBomb)
+                        this.numNeighbors++;
+                }
         }
     }
 }
