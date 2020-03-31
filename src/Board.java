@@ -9,7 +9,7 @@ public class Board {
         Scanner scan = new Scanner(System.in);
 
         // Create the board
-        Board myBoard = new Board(2, 2, 2);
+        Board myBoard = new Board(5, 5, 2);
 
         do {
             // Print board
@@ -103,24 +103,47 @@ public class Board {
     public void revealTile(int i, int j) {
 
         // Make sure game is active
-        if (!this.isActive)
-            throw new RuntimeException("Game must be active to play.");
+        if (!this.isActive) {
+            System.out.println("Game must be active to play.");
+            return;
+        }
 
         // Make sure tile in bounds
-        if (i < 0 || i >= this.height || j < 0 || j >= this.width)
-            throw new RuntimeException("Tile location value not in bounds.");
+        if (i < 0 || i >= this.height || j < 0 || j >= this.width) {
+            System.out.println("Tile location value not in bounds.");
+            return;
+        }
 
         // Make sure tile is not already revealed
         if (this.tileArray[i][j].isRevealed)
-            throw new RuntimeException("Tile is already revealed.");
+            return;
 
         // Make sure tile is not flagged
         if (this.tileArray[i][j].isFlagged)
-            throw new RuntimeException("Tile is flagged.");
+            return;
 
         // Flip the tile!
         this.tileArray[i][j].isRevealed = true;
         this.revealedTiles++;
+
+        // Valley propagate
+        if (!this.tileArray[i][j].isBomb && this.tileArray[i][j].numNeighbors == 0){
+
+            // Flip all tiles within a 2 manhattan distance
+            for (int di = -1; di <= 1; di++)
+                for (int dj = -1; dj <= 1; dj++){
+
+                    // Ensure indices in bounds
+                    int iNew = i + di;
+                    int jNew = j + dj;
+
+                    if (iNew < 0 || iNew >= this.height || jNew < 0 || jNew >= this.width)
+                        continue;
+
+                    // Flip the tile
+                    this.revealTile(iNew, jNew);
+                }
+        }
 
         // Check for bomb!
         if (this.tileArray[i][j].isBomb){
