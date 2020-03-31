@@ -61,6 +61,10 @@ public class Board {
         this.constructTiles();
     }
 
+    private boolean outOfBounds(int i, int j) {
+        return (i < 0 || i >= this.height || j < 0 || j >= this.width);
+    }
+
     // Construct the array of tiles
     private void constructTiles() {
 
@@ -109,17 +113,13 @@ public class Board {
         }
 
         // Make sure tile in bounds
-        if (i < 0 || i >= this.height || j < 0 || j >= this.width) {
+        if (this.outOfBounds(i, j)) {
             System.out.println("Tile location value not in bounds.");
             return;
         }
 
-        // Make sure tile is not already revealed
-        if (this.tileArray[i][j].isRevealed)
-            return;
-
-        // Make sure tile is not flagged
-        if (this.tileArray[i][j].isFlagged)
+        // Make sure tile is not already revealed or flagged
+        if (this.tileArray[i][j].isRevealed || this.tileArray[i][j].isFlagged)
             return;
 
         // Flip the tile!
@@ -137,7 +137,7 @@ public class Board {
                     int iNew = i + di;
                     int jNew = j + dj;
 
-                    if (iNew < 0 || iNew >= this.height || jNew < 0 || jNew >= this.width)
+                    if (this.outOfBounds(iNew, jNew))
                         continue;
 
                     // Flip the tile
@@ -166,16 +166,20 @@ public class Board {
     public void flagTile(int i, int j) {
 
         // Make sure game is active
-        if (!this.isActive)
-            throw new RuntimeException("Game must be active to play.");
+        if (!this.isActive) {
+            System.out.println("Game must be active to play.");
+            return;
+        }
 
         // Make sure tile in bounds
-        if (i < 0 || i >= this.height || j < 0 || j >= this.width)
-            throw new RuntimeException("Tile location value not in bounds.");
+        if (this.outOfBounds(i, j)) {
+            System.out.println("Tile location value not in bounds.");
+            return;
+        }
 
         // Make sure tile is not revealed
         if (this.tileArray[i][j].isRevealed)
-            throw new RuntimeException("Tile is revealed.");
+            return;
 
         // Toggle flag status
         this.tileArray[i][j].isFlagged = !this.tileArray[i][j].isFlagged;
@@ -186,6 +190,7 @@ public class Board {
         // Make sure enough tiles have been revealed
         if (this.revealedTiles == this.height * this.width - this.totalBombs){
             this.isActive = false;
+            this.printBoard(true);
             System.out.println("You have won Minesweeper!");
         }
     }
@@ -194,6 +199,7 @@ public class Board {
 
         // Make the player feel bad
         this.isActive = false;
+        this.printBoard(true);
         System.out.println("You have lost Minesweeper!");
     }
 
@@ -268,7 +274,7 @@ public class Board {
                     int iNew = this.i + di;
                     int jNew = this.j + dj;
 
-                    if (iNew < 0 || iNew >= Board.this.height || jNew < 0 || jNew >= Board.this.width)
+                    if (Board.this.outOfBounds(iNew, jNew))
                         continue;
 
                     if (Board.this.tileArray[iNew][jNew].isBomb)
