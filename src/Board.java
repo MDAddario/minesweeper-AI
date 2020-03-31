@@ -2,12 +2,21 @@ import java.util.Random;
 
 public class Board {
 
+    public static void main(String[] args) {
+
+        Board myBoard = new Board();
+        myBoard.printBoard(true);
+        myBoard.printBoard(false);
+    }
+
     // Fields
     private int height;
     private int width;
     private int totalBombs;
-    private int concealedBombs;
+    private int revealedTiles;
     private Tile[][] tileArray;
+    private boolean firstMove;
+    private boolean isActive;
 
     // Simplest constructor with default values
     private Board() {
@@ -22,7 +31,7 @@ public class Board {
 
         // Check for nonsense
         if (totalBombs >= height * width)
-            throw new RuntimeException("There must be more tiles than there are bombs");
+            throw new RuntimeException("There must be more tiles than there are bombs.");
         this.height = height;
         this.width = width;
         this.totalBombs = totalBombs;
@@ -32,6 +41,11 @@ public class Board {
     // Construct the array of tiles
     private void constructTiles() {
 
+        // Fresh board
+        this.firstMove = true;
+        this.isActive = true;
+        this.revealedTiles = 0;
+
         // Create proxy board to keep track of bomb locations
         boolean[][] isBomb = new boolean[this.height][this.width];
 
@@ -39,15 +53,15 @@ public class Board {
         Random rand = new Random();
 
         // Populate the board with bombs
-        this.concealedBombs = 0;
-        while (this.concealedBombs < this.totalBombs) {
+        int placedBombs = 0;
+        while (placedBombs < this.totalBombs) {
 
             int i = rand.nextInt(this.height);
             int j = rand.nextInt(this.width);
 
             if (!isBomb[i][j]){
                 isBomb[i][j] = true;
-                this.concealedBombs++;
+                placedBombs++;
             }
         }
 
@@ -63,7 +77,81 @@ public class Board {
                 this.tileArray[i][j].countNeighbors();
     }
 
+    public void revealTile(int i, int j) {
+
+        // Make sure game is active
+        if (!this.isActive)
+            throw new RuntimeException("Game must be active to play.");
+
+        // Make sure tile in bounds
+        if (i < 0 || i >= this.height || j < 0 || j >= this.width)
+            throw new RuntimeException("Tile location value not in bounds.");
+
+        // Make sure tile is not already revealed
+        if (this.tileArray[i][j].isRevealed)
+            throw new RuntimeException("Tile is already revealed.");
+
+        // Make sure tile is not flagged
+        if (this.tileArray[i][j].isFlagged)
+            throw new RuntimeException("Tile is flagged.");
+
+        // Flip the tile!
+        this.tileArray[i][j].isRevealed = true;
+        this.revealedTiles++;
+
+        // Check for bomb!
+        if (this.tileArray[i][j].isBomb){
+
+            // If first move, just reset
+            if (this.firstMove) {
+                this.constructTiles();
+                this.revealTile(i, j);
+
+            } else {
+                this.loseGame();
+            }
+        // No bomb
+        } else {
+            this.firstMove = false;
+            this.checkVictory();
+        }
+    }
+
+    public void flagTile(int i, int j) {
+
+        // Make sure game is active
+        if (!this.isActive)
+            throw new RuntimeException("Game must be active to play.");
+
+        // Make sure tile in bounds
+        if (i < 0 || i >= this.height || j < 0 || j >= this.width)
+            throw new RuntimeException("Tile location value not in bounds.");
+
+        // Toggle flag status
+        this.tileArray[i][j].isFlagged = !this.tileArray[i][j].isFlagged;
+    }
+
+    private void checkVictory() {
+
+        // Make sure enough tiles have been revealed
+        if (this.revealedTiles == this.height * this.width - this.totalBombs){
+            this.isActive = false;
+            System.out.println("You have won Minesweeper!");
+        }
+    }
+
+    private void loseGame() {
+
+        // Make the player feel bad
+        this.isActive = false;
+        System.out.println("You have lost Minesweeper!");
+    }
+
     public void printBoard(boolean revealAll) {
+
+        System.out.print("/");
+        for (int j = 0; j < this.width; j++) System.out.print("---");
+        System.out.println("\\");
 
         for (int i = 0; i < this.height; i++) {
 
@@ -88,6 +176,9 @@ public class Board {
             }
             System.out.println("|");
         }
+        System.out.print("\\");
+        for (int j = 0; j < this.width; j++) System.out.print("---");
+        System.out.println("/");
     }
 
     private class Tile {
@@ -98,6 +189,7 @@ public class Board {
         private boolean isBomb;
         private int numNeighbors;
         private boolean isRevealed;
+        private boolean isFlagged;
 
         // Constructor
         private Tile(boolean isBomb, int i, int j) {
@@ -106,6 +198,7 @@ public class Board {
             this.isBomb = isBomb;
             this.numNeighbors = 0;
             this.isRevealed = false;
+            this.isFlagged = false;
         }
 
         // Determine the number of bomb neighbors
